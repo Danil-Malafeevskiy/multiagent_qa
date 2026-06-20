@@ -1,0 +1,11 @@
+langchain
+langgraph
+langchain-openai
+pydantic
+pydantic-settings
+python-dotenv
+pytest
+pytest-json-report
+rich
+typer
+

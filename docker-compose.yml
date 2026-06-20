@@ -1,0 +1,9 @@
+services:
+  qa-testgen:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./examples:/app/examples:ro
+

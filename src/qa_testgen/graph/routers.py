@@ -1,0 +1,31 @@
+from qa_testgen.config.settings import AppSettings
+from qa_testgen.domain.enums import ValidationStatus
+from qa_testgen.domain.state import GraphState
+
+
+def route_after_scenario_validation(state: GraphState, *, settings: AppSettings) -> str:
+    report = state["scenario_validation_report"]
+    if report is None:
+        raise ValueError("Scenario validation report is missing")
+    if report.status == ValidationStatus.VALID:
+        return "generate_pytest"
+    if state["scenario_validation_attempt"] < settings.max_scenario_validation_attempts:
+        return "generate_scenarios"
+    state["errors"].append(
+        "Scenario validation attempts exhausted; generating pytest with warnings."
+    )
+    return "generate_pytest"
+
+
+def route_after_syntax_validation(state: GraphState, *, settings: AppSettings) -> str:
+    result = state["syntax_validation_result"]
+    if result is None:
+        raise ValueError("Syntax validation result is missing")
+    if result.is_valid:
+        return "save_artifacts"
+    if state["test_generation_attempt"] < settings.max_test_generation_attempts:
+        return "repair_pytest"
+    state["errors"].append(
+        "Test generation attempts exhausted; saving syntactically invalid output."
+    )
+    return "save_artifacts"

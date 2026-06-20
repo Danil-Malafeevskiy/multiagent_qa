@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qa-testgen-prototype"
+version = "0.1.0"
+description = "Multi-agent pytest generation through validated BDD scenarios"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "langchain",
+  "langgraph",
+  "langchain-openai",
+  "pydantic>=2",
+  "pydantic-settings",
+  "python-dotenv",
+  "pytest",
+  "pytest-json-report",
+  "rich",
+  "typer",
+]
+
+[project.scripts]
+qa-testgen = "qa_testgen.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/qa_testgen/prompts/*.py" = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
