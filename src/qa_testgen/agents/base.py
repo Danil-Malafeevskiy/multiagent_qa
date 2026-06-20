@@ -66,9 +66,8 @@ class BaseAgent(ABC, Generic[InputT, OutputT]):
             f"{user_prompt}\n\n"
             "ОБЯЗАТЕЛЬНАЯ JSON SCHEMA ОТВЕТА:\n"
             f"{schema_json}\n\n"
-            "Все обязательные поля должны присутствовать под точными именами. "
-            "Не заменяй steps отдельными полями given/when/then и не переименовывай "
-            "scenario_type в type."
+            "Все обязательные поля должны присутствовать под точными именами и "
+            "иметь типы, указанные в schema."
         )
         raw = self.llm_client.invoke_json(system_prompt, prompt_with_schema)
 

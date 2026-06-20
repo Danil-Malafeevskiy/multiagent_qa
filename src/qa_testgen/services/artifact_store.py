@@ -12,8 +12,13 @@ from qa_testgen.services.metrics import MetricsCalculator
 
 
 class ArtifactStore:
-    def __init__(self, artifacts_dir: Path) -> None:
+    def __init__(
+        self,
+        artifacts_dir: Path,
+        run_metadata: dict[str, Any] | None = None,
+    ) -> None:
         self.artifacts_dir = artifacts_dir
+        self.run_metadata = run_metadata or {}
         self.artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.run_dir: Path | None = None
 
@@ -42,7 +47,7 @@ class ArtifactStore:
         return str(path)
 
     def save_pipeline_artifacts(self, state: GraphState) -> dict[str, str]:
-        run_dir = self.run_dir or self.create_run_dir()
+        run_dir = self.create_run_dir()
         pytest_result = state["pytest_generation_result"]
         paths = {
             "source_code": self.save_json(
@@ -50,6 +55,9 @@ class ArtifactStore:
             ),
             "requirements": self.save_json(
                 run_dir / "requirements.json", state["requirements"]
+            ),
+            "run_metadata": self.save_json(
+                run_dir / "run_metadata.json", self.run_metadata
             ),
             "scenarios": self.save_json(run_dir / "scenarios.json", state["scenarios"]),
             "scenario_generation_notes": self.save_text(
@@ -59,6 +67,14 @@ class ArtifactStore:
             "scenario_validation_report": self.save_json(
                 run_dir / "scenario_validation_report.json",
                 state["scenario_validation_report"],
+            ),
+            "scenario_generation_history": self.save_json(
+                run_dir / "scenario_generation_history.json",
+                state["scenario_generation_history"],
+            ),
+            "scenario_validation_history": self.save_json(
+                run_dir / "scenario_validation_history.json",
+                state["scenario_validation_history"],
             ),
             "generated_tests": self.save_text(
                 run_dir / "generated_tests.py",
@@ -71,10 +87,11 @@ class ArtifactStore:
             "errors": self.save_json(run_dir / "errors.json", state["errors"]),
             "metrics": self.save_json(
                 run_dir / "metrics.json",
-                MetricsCalculator().calculate_proposed_metrics(state),
+                MetricsCalculator().calculate_metrics(state),
             ),
         }
         pipeline_result = PipelineResult(
+            pipeline_type=state["pipeline_type"],
             requirements=state["requirements"],
             scenarios=state["scenarios"],
             scenario_generation_notes=state["scenario_generation_notes"],

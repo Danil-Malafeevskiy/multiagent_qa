@@ -47,3 +47,24 @@ def test_validation_score_must_be_between_zero_and_one() -> None:
             duplicated_scenarios=[],
             recommendations=[],
         )
+
+
+def test_bdd_scenario_requires_given_when_then_order() -> None:
+    with pytest.raises(ValidationError, match="Given -> When -> Then"):
+        BDDScenario(
+            id="SCN-001",
+            requirement_id="REQ-001",
+            title="Wrong order",
+            scenario_type=ScenarioType.POSITIVE,
+            steps=[
+                BDDStep(keyword="When", text="action"),
+                BDDStep(keyword="Given", text="input"),
+                BDDStep(keyword="Then", text="result"),
+            ],
+            oracle=Oracle(
+                description="Expected result",
+                assertion_intent="Compare result",
+                expected_result="value",
+            ),
+            rationale="Invalid test fixture",
+        )

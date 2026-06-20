@@ -19,3 +19,8 @@ class TestGenerationStatus(StrEnum):
     SUCCESS = "success"
     FAILED = "failed"
     NEEDS_RETRY = "needs_retry"
+
+
+class PipelineType(StrEnum):
+    PROPOSED = "proposed"
+    BASELINE = "baseline"

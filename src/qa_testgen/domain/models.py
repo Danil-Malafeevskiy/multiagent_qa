@@ -1,8 +1,8 @@
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-from qa_testgen.domain.enums import ScenarioType, ValidationStatus
+from qa_testgen.domain.enums import PipelineType, ScenarioType, ValidationStatus
 
 
 class SourceCodeInput(BaseModel):
@@ -38,6 +38,24 @@ class BDDScenario(BaseModel):
     covered_conditions: list[str] = Field(default_factory=list)
     test_data: dict[str, Any] = Field(default_factory=dict)
     rationale: str
+
+    @model_validator(mode="after")
+    def validate_bdd_step_sequence(self) -> Self:
+        first_positions: dict[str, int] = {}
+        for index, step in enumerate(self.steps):
+            first_positions.setdefault(step.keyword, index)
+
+        required = ("Given", "When", "Then")
+        missing = [keyword for keyword in required if keyword not in first_positions]
+        if missing:
+            raise ValueError(f"BDD scenario is missing steps: {', '.join(missing)}")
+        if not (
+            first_positions["Given"]
+            < first_positions["When"]
+            < first_positions["Then"]
+        ):
+            raise ValueError("BDD steps must follow Given -> When -> Then order")
+        return self
 
 
 class ScenarioGenerationResult(BaseModel):
@@ -78,6 +96,7 @@ class SyntaxValidationResult(BaseModel):
 
 
 class PipelineResult(BaseModel):
+    pipeline_type: PipelineType
     requirements: list[Requirement]
     scenarios: list[BDDScenario]
     scenario_generation_notes: str = ""

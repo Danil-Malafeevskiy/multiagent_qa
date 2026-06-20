@@ -14,3 +14,10 @@ def test_invalid_python_code() -> None:
     assert result.is_valid is False
     assert result.error_message
     assert result.line_number == 1
+
+
+def test_empty_python_code_is_invalid() -> None:
+    result = SyntaxChecker().validate_python_code("  \n")
+
+    assert result.is_valid is False
+    assert result.error_message == "Generated test code is empty"

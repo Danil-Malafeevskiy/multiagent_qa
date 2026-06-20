@@ -77,3 +77,18 @@ def test_coverage_check_does_not_downgrade_invalid_report() -> None:
     )
 
     assert result.status is ValidationStatus.INVALID
+
+
+def test_unknown_requirement_and_duplicate_ids_are_rejected() -> None:
+    scenarios = [_scenario(item) for item in ScenarioType]
+    scenarios.append(scenarios[0].model_copy(update={"requirement_id": "REQ-404"}))
+
+    result = ScenarioCoverageChecker().enforce_coverage(
+        [Requirement(id="REQ-001", text="A requirement")],
+        scenarios,
+        _valid_report(),
+    )
+
+    assert result.status is ValidationStatus.INVALID
+    assert scenarios[0].id in result.duplicated_scenarios
+    assert any("unknown requirement" in issue.message for issue in result.issues)

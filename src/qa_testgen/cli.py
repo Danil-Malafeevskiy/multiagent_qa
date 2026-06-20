@@ -16,6 +16,7 @@ from qa_testgen.agents.scenario_generator import ScenarioGeneratorAgent
 from qa_testgen.agents.scenario_validator import ScenarioValidatorAgent
 from qa_testgen.agents.syntax_validator import SyntaxValidatorAgent
 from qa_testgen.config.settings import AppSettings, get_settings
+from qa_testgen.domain.enums import PipelineType
 from qa_testgen.domain.models import Requirement, SourceCodeInput
 from qa_testgen.domain.state import GraphState
 from qa_testgen.graph.builder import TestGenerationGraphBuilder
@@ -53,6 +54,14 @@ def _load_inputs(
     )
 
 
+def _artifact_store(
+    settings: AppSettings, pipeline_type: PipelineType
+) -> ArtifactStore:
+    metadata = settings.model_dump(mode="json", exclude={"openai_api_key"})
+    metadata["pipeline_type"] = pipeline_type.value
+    return ArtifactStore(settings.artifacts_dir, run_metadata=metadata)
+
+
 @app.command("run-proposed")
 def run_proposed(
     project_dir: Annotated[Path, typer.Option(exists=True, file_okay=False)],
@@ -71,14 +80,17 @@ def run_proposed(
         PytestGeneratorAgent(llm_client, settings),
         syntax_validator,
         settings,
-        ArtifactStore(settings.artifacts_dir),
+        _artifact_store(settings, PipelineType.PROPOSED),
     ).build()
     initial_state: GraphState = {
+        "pipeline_type": PipelineType.PROPOSED,
         "source_code": source_code,
         "requirements": requirements,
         "scenarios": [],
         "scenario_generation_notes": "",
+        "scenario_generation_history": [],
         "scenario_validation_report": None,
+        "scenario_validation_history": [],
         "pytest_generation_result": None,
         "syntax_validation_result": None,
         "scenario_validation_attempt": 0,
@@ -117,11 +129,14 @@ def run_baseline(
     )
     syntax_result = SyntaxValidatorAgent(SyntaxChecker()).run(pytest_result.test_code)
     state: GraphState = {
+        "pipeline_type": PipelineType.BASELINE,
         "source_code": source_code,
         "requirements": requirements,
         "scenarios": [],
         "scenario_generation_notes": "Baseline does not generate BDD scenarios.",
+        "scenario_generation_history": [],
         "scenario_validation_report": None,
+        "scenario_validation_history": [],
         "pytest_generation_result": pytest_result,
         "syntax_validation_result": syntax_result,
         "scenario_validation_attempt": 0,
@@ -129,9 +144,9 @@ def run_baseline(
         "errors": [],
         "artifacts": {},
     }
-    state["artifacts"] = ArtifactStore(settings.artifacts_dir).save_pipeline_artifacts(
-        state
-    )
+    state["artifacts"] = _artifact_store(
+        settings, PipelineType.BASELINE
+    ).save_pipeline_artifacts(state)
     console.print("Baseline generation: [green]done[/green]")
     console.print(
         "Синтаксис: "
@@ -147,14 +162,22 @@ def compare(
     ),
 ) -> None:
     """Show metrics available for artifact runs."""
-    table = Table("Run", "Syntax", "Coverage", "Scenarios")
+    table = Table("Run", "Type", "Model", "Syntax", "Coverage", "Scenarios")
     for run_dir in sorted(artifacts_dir.glob("run_*")):
         metrics_path = run_dir / "metrics.json"
         if not metrics_path.exists():
             continue
         metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+        metadata_path = run_dir / "run_metadata.json"
+        metadata = (
+            json.loads(metadata_path.read_text(encoding="utf-8"))
+            if metadata_path.exists()
+            else {}
+        )
         table.add_row(
             run_dir.name,
+            str(metrics.get("pipeline_type", metadata.get("pipeline_type", "-"))),
+            str(metadata.get("llm_model", "-")),
             str(metrics.get("syntax_validity", "-")),
             f"{metrics.get('requirement_coverage_estimate', 0):.2f}",
             str(sum(metrics.get("scenario_type_distribution", {}).values())),

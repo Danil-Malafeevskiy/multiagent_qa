@@ -12,6 +12,8 @@ from qa_testgen.domain.state import GraphState
 from qa_testgen.graph.nodes import (
     generate_pytest_node,
     generate_scenarios_node,
+    record_scenario_exhaustion_node,
+    record_syntax_exhaustion_node,
     repair_pytest_node,
     save_artifacts_node,
     validate_scenarios_node,
@@ -64,6 +66,10 @@ class TestGenerationGraphBuilder:
             partial(repair_pytest_node, agent=self.pytest_generator),
         )
         graph.add_node(
+            "record_scenario_exhaustion", record_scenario_exhaustion_node
+        )
+        graph.add_node("record_syntax_exhaustion", record_syntax_exhaustion_node)
+        graph.add_node(
             "save_artifacts",
             partial(save_artifacts_node, artifact_store=self.artifact_store),
         )
@@ -75,8 +81,10 @@ class TestGenerationGraphBuilder:
             {
                 "generate_scenarios": "generate_scenarios",
                 "generate_pytest": "generate_pytest",
+                "record_scenario_exhaustion": "record_scenario_exhaustion",
             },
         )
+        graph.add_edge("record_scenario_exhaustion", "generate_pytest")
         graph.add_edge("generate_pytest", "validate_syntax")
         graph.add_conditional_edges(
             "validate_syntax",
@@ -84,8 +92,10 @@ class TestGenerationGraphBuilder:
             {
                 "repair_pytest": "repair_pytest",
                 "save_artifacts": "save_artifacts",
+                "record_syntax_exhaustion": "record_syntax_exhaustion",
             },
         )
+        graph.add_edge("record_syntax_exhaustion", "save_artifacts")
         graph.add_edge("repair_pytest", "validate_syntax")
         graph.add_edge("save_artifacts", END)
         return graph.compile()
