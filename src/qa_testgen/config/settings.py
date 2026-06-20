@@ -21,6 +21,7 @@ class AppSettings(BaseSettings):
     openai_api_key: SecretStr
     max_scenario_validation_attempts: int = Field(ge=1)
     max_test_generation_attempts: int = Field(ge=1)
+    max_llm_schema_repair_attempts: int = Field(default=1, ge=0)
     artifacts_dir: Path
     log_level: str
 

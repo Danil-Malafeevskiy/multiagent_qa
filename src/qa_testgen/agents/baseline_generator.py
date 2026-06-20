@@ -1,6 +1,6 @@
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from qa_testgen.agents.base import AgentExecutionError, BaseAgent
+from qa_testgen.agents.base import BaseAgent
 from qa_testgen.config.settings import AppSettings
 from qa_testgen.domain.models import (
     PytestGenerationResult,
@@ -27,15 +27,11 @@ class BaselinePytestGeneratorAgent(
 
     def run(self, input_data: BaselineGeneratorInput) -> PytestGenerationResult:
         self._log_start(requirements=len(input_data.requirements))
-        raw = self.llm_client.invoke_json(
-            self._build_system_prompt(), self._build_user_prompt(input_data)
+        result = self._invoke_model(
+            self._build_system_prompt(),
+            self._build_user_prompt(input_data),
+            PytestGenerationResult,
         )
-        try:
-            result = PytestGenerationResult.model_validate(raw)
-        except ValidationError as exc:
-            raise AgentExecutionError(
-                f"Baseline generator returned an invalid schema: {exc}"
-            ) from exc
         self._log_finish(test_code_length=len(result.test_code))
         return result
 

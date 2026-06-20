@@ -1,6 +1,6 @@
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from qa_testgen.agents.base import AgentExecutionError, BaseAgent
+from qa_testgen.agents.base import BaseAgent
 from qa_testgen.config.settings import AppSettings
 from qa_testgen.domain.models import (
     Requirement,
@@ -29,15 +29,11 @@ class ScenarioGeneratorAgent(
 
     def run(self, input_data: ScenarioGeneratorInput) -> ScenarioGenerationResult:
         self._log_start(requirements=len(input_data.requirements))
-        raw = self.llm_client.invoke_json(
-            self._build_system_prompt(), self._build_user_prompt(input_data)
+        result = self._invoke_model(
+            self._build_system_prompt(),
+            self._build_user_prompt(input_data),
+            ScenarioGenerationResult,
         )
-        try:
-            result = ScenarioGenerationResult.model_validate(raw)
-        except ValidationError as exc:
-            raise AgentExecutionError(
-                f"Scenario generator returned an invalid schema: {exc}"
-            ) from exc
         self._log_finish(scenarios=len(result.scenarios))
         return result
 

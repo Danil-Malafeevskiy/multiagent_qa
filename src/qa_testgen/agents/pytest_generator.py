@@ -1,6 +1,6 @@
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from qa_testgen.agents.base import AgentExecutionError, BaseAgent
+from qa_testgen.agents.base import BaseAgent
 from qa_testgen.config.settings import AppSettings
 from qa_testgen.domain.models import (
     BDDScenario,
@@ -37,10 +37,11 @@ class PytestGeneratorAgent(BaseAgent[PytestGeneratorInput, PytestGenerationResul
 
     def run(self, input_data: PytestGeneratorInput) -> PytestGenerationResult:
         self._log_start(scenarios=len(input_data.scenarios), mode="generation")
-        raw = self.llm_client.invoke_json(
-            self._build_system_prompt(), self._build_user_prompt(input_data)
+        result = self._invoke_model(
+            self._build_system_prompt(),
+            self._build_user_prompt(input_data),
+            PytestGenerationResult,
         )
-        result = self._validate_result(raw)
         self._log_finish(
             scenarios=len(input_data.scenarios), test_code_length=len(result.test_code)
         )
@@ -48,7 +49,7 @@ class PytestGeneratorAgent(BaseAgent[PytestGeneratorInput, PytestGenerationResul
 
     def repair(self, input_data: PytestRepairInput) -> PytestGenerationResult:
         self._log_start(scenarios=len(input_data.scenarios), mode="repair")
-        raw = self.llm_client.invoke_json(
+        result = self._invoke_model(
             PYTEST_REPAIR_SYSTEM_PROMPT,
             build_pytest_repair_user_prompt(
                 input_data.source_code,
@@ -56,8 +57,8 @@ class PytestGeneratorAgent(BaseAgent[PytestGeneratorInput, PytestGenerationResul
                 input_data.previous_test_code,
                 input_data.syntax_error,
             ),
+            PytestGenerationResult,
         )
-        result = self._validate_result(raw)
         self._log_finish(test_code_length=len(result.test_code), mode="repair")
         return result
 
@@ -70,12 +71,3 @@ class PytestGeneratorAgent(BaseAgent[PytestGeneratorInput, PytestGenerationResul
             input_data.scenarios,
             input_data.validation_report,
         )
-
-    @staticmethod
-    def _validate_result(raw: dict[str, object]) -> PytestGenerationResult:
-        try:
-            return PytestGenerationResult.model_validate(raw)
-        except ValidationError as exc:
-            raise AgentExecutionError(
-                f"Pytest generator returned an invalid schema: {exc}"
-            ) from exc
