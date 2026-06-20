@@ -52,6 +52,10 @@ class ArtifactStore:
                 run_dir / "requirements.json", state["requirements"]
             ),
             "scenarios": self.save_json(run_dir / "scenarios.json", state["scenarios"]),
+            "scenario_generation_notes": self.save_text(
+                run_dir / "scenario_generation_notes.txt",
+                state["scenario_generation_notes"],
+            ),
             "scenario_validation_report": self.save_json(
                 run_dir / "scenario_validation_report.json",
                 state["scenario_validation_report"],
@@ -73,6 +77,7 @@ class ArtifactStore:
         pipeline_result = PipelineResult(
             requirements=state["requirements"],
             scenarios=state["scenarios"],
+            scenario_generation_notes=state["scenario_generation_notes"],
             validation_report=state["scenario_validation_report"],
             pytest_result=pytest_result,
             syntax_result=state["syntax_validation_result"],

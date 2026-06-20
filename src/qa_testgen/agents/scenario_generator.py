@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from qa_testgen.agents.base import BaseAgent
 from qa_testgen.config.settings import AppSettings
 from qa_testgen.domain.models import (
+    BDDScenario,
     Requirement,
     ScenarioGenerationResult,
     ScenarioValidationReport,
@@ -18,6 +19,7 @@ from qa_testgen.prompts.scenario_prompts import (
 class ScenarioGeneratorInput(BaseModel):
     source_code: SourceCodeInput
     requirements: list[Requirement]
+    previous_scenarios: list[BDDScenario] = Field(default_factory=list)
     validation_report: ScenarioValidationReport | None = None
 
 
@@ -44,5 +46,6 @@ class ScenarioGeneratorAgent(
         return build_scenario_generation_user_prompt(
             input_data.source_code,
             input_data.requirements,
+            input_data.previous_scenarios,
             input_data.validation_report,
         )

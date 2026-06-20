@@ -23,10 +23,14 @@ def generate_scenarios_node(
         ScenarioGeneratorInput(
             source_code=state["source_code"],
             requirements=state["requirements"],
+            previous_scenarios=state["scenarios"],
             validation_report=state["scenario_validation_report"],
         )
     )
-    return {"scenarios": result.scenarios}
+    return {
+        "scenarios": result.scenarios,
+        "scenario_generation_notes": result.generation_notes,
+    }
 
 
 def validate_scenarios_node(
@@ -37,6 +41,7 @@ def validate_scenarios_node(
             source_code=state["source_code"],
             requirements=state["requirements"],
             scenarios=state["scenarios"],
+            previous_validation_report=state["scenario_validation_report"],
         )
     )
     return {

@@ -80,6 +80,7 @@ class SyntaxValidationResult(BaseModel):
 class PipelineResult(BaseModel):
     requirements: list[Requirement]
     scenarios: list[BDDScenario]
+    scenario_generation_notes: str = ""
     validation_report: ScenarioValidationReport | None = None
     pytest_result: PytestGenerationResult | None = None
     syntax_result: SyntaxValidationResult | None = None

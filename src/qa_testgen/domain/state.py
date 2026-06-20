@@ -14,6 +14,7 @@ class GraphState(TypedDict):
     source_code: SourceCodeInput
     requirements: list[Requirement]
     scenarios: list[BDDScenario]
+    scenario_generation_notes: str
     scenario_validation_report: ScenarioValidationReport | None
     pytest_generation_result: PytestGenerationResult | None
     syntax_validation_result: SyntaxValidationResult | None
