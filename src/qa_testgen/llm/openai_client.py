@@ -13,6 +13,7 @@ class OpenAILLMClient(BaseLLMClient):
     def __init__(self, settings: AppSettings) -> None:
         self._client = ChatOpenAI(
             model=settings.llm_model,
+            base_url=settings.llm_base_url,
             temperature=settings.llm_temperature,
             max_tokens=settings.llm_max_tokens,
             api_key=settings.openai_api_key,

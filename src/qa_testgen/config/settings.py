@@ -15,6 +15,7 @@ class AppSettings(BaseSettings):
     app_name: str = "qa-testgen-prototype"
     llm_provider: str
     llm_model: str
+    llm_base_url: str | None = None
     llm_temperature: float = Field(ge=0, le=2)
     llm_max_tokens: int = Field(gt=0)
     openai_api_key: SecretStr
